@@ -1,0 +1,6 @@
+@DAM_Upload_HostAddress = http://localhost:5207
+
+GET {{DAM_Upload_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

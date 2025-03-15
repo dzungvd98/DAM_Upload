@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\DAM_Upload.props" />
+</Project>
