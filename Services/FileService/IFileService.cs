@@ -1,8 +1,9 @@
-﻿using DAM_Upload.Models;
+﻿using DAM_Upload.DTO;
+using DAM_Upload.Models;
 namespace DAM_Upload.Services.FileService
 {
     public interface IFileService
     {
-        Task<Models.File> UploadFileAsync(int folderId, IFormFile file);
+        Task<StorageDTO> UploadFileAsync(int folderId, IFormFile file);
     }
 }

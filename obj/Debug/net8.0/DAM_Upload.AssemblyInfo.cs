@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DAM_Upload")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bca509ea2dae80f318489a81c45f156c375d138a")]
 [assembly: System.Reflection.AssemblyProductAttribute("DAM_Upload")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DAM_Upload")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

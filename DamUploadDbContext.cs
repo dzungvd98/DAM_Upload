@@ -10,6 +10,7 @@ namespace DAM_Upload
         public DbSet<Folder> Folders { get; set; }
         public DbSet<Models.File> Files { get; set; }
         public DbSet<Icon> Icons { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
