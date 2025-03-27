@@ -1,4 +1,5 @@
-﻿using DAM_Upload.Services.FolderService;
+﻿using DAM_Upload.Services.FileService;
+using DAM_Upload.Services.FolderService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,12 @@ namespace DAM_Upload.Controllers
     public class FolderController : ControllerBase
     {
         public readonly IFolderService folderService;
+        public readonly IFileService fileService;
 
-        public FolderController(IFolderService folderService)
+        public FolderController(IFolderService folderService, IFileService fileService)
         {
             this.folderService = folderService;
+            this.fileService = fileService;
         }
 
 
@@ -44,5 +47,32 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [HttpPost("upload-file")]
+        public async Task<IActionResult> uploadFileAsync(int? folderId, IFormFile file)
+        {
+            try
+            {
+                var fileUploadted = await fileService.UploadFileAsync(folderId, file);
+                return Ok(fileUploadted);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("{folderId}")]
+        public async Task<IActionResult> UpdateFolder(int folderId, string folderName)
+        {
+            try
+            {
+                var folderUpdated = await folderService.UpdateFolderNameAsync(folderId, folderName);
+                return Ok(folderUpdated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }  
 }

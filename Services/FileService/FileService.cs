@@ -1,4 +1,5 @@
 ﻿using DAM_Upload.DTO;
+using DAM_Upload.Models;
 using PdfiumViewer;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,34 +16,43 @@ namespace DAM_Upload.Services.FileService
             _context = context;
         }
 
-        public async Task<StorageDTO> UploadFileAsync(int folderId, IFormFile file)
+        public async Task<StorageDTO> UploadFileAsync(int? folderId, IFormFile file)
         {
-            if (file == null || file.Length == 0)
-                throw new ArgumentException("File không hợp lệ");
+            ArgumentNullException.ThrowIfNull(file, "File invalid!");
 
-            var folder = await _context.Folders.FindAsync(folderId);
-            if (folder == null)
-                throw new KeyNotFoundException("Thư mục không tồn tại");
+            string folderPath;
+            Folder folder = null;
 
-            string folderPath = folder.Path;
-            Directory.CreateDirectory(folderPath);
+            if (folderId.HasValue)
+            {
+                folder = await _context.Folders.FindAsync(folderId.Value);
+                ArgumentNullException.ThrowIfNull(folder, "Folder doesn't exist!");
+                folderPath = folder.Path;
+            }
+            else
+            {
+                // Lưu vào thư mục mặc định (ví dụ: D:/Uploads)
+                folderPath = Path.Combine("Disk");
+                Directory.CreateDirectory(folderPath); // Tạo nếu chưa tồn tại
+            }
 
             string originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
             string extension = Path.GetExtension(file.FileName).ToLower();
-            string newFileName = $"{Guid.NewGuid()}{extension}";
+            string newFileName = $"{originalFileName}{extension}";
             string filePath = Path.Combine(folderPath, newFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
 
-            // Xử lý tên file trùng
+            // Handle duplicate file
             int count = 1;
             while (System.IO.File.Exists(filePath))
             {
-                newFileName = $"{originalFileName}_{count:D2}{extension}";
+                newFileName = $"{originalFileName}_{count}{extension}";
                 filePath = Path.Combine(folderPath, newFileName);
                 count++;
+            }
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
             }
 
             var newFile = new Models.File
@@ -52,7 +62,7 @@ namespace DAM_Upload.Services.FileService
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 Folder = folder,
-                Size = (int)file.Length / 1048576,
+                Size = (int)file.Length,
                 Path = filePath
             };
 

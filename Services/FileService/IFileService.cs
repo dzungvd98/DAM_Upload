@@ -4,6 +4,6 @@ namespace DAM_Upload.Services.FileService
 {
     public interface IFileService
     {
-        Task<StorageDTO> UploadFileAsync(int folderId, IFormFile file);
+        Task<StorageDTO> UploadFileAsync(int? folderId, IFormFile file);
     }
 }
