@@ -2,6 +2,7 @@
 using DAM_Upload.Services.AuthService;
 using DAM_Upload.Services.FileService;
 using DAM_Upload.Services.FolderService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -23,14 +24,18 @@ namespace DAM_Upload.Controllers
             _authService = authService;
         }
 
-
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetFolderAndFile(int folderId)
         {
             try
             {
-
-                var result = await folderService.GetFolderAndFileAsync(folderId);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user.");
+                }
+                var result = await folderService.GetFolderAndFileAsync(folderId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -39,6 +44,7 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> CreateFolder(string folderName, int parentId)
         {
@@ -58,6 +64,7 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("upload-file")]
         public async Task<IActionResult> uploadFileAsync(int? folderId, IFormFile file)
         {
@@ -77,6 +84,7 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("{folderId}")]
         public async Task<IActionResult> UpdateFolder(int folderId, string folderName)
         {

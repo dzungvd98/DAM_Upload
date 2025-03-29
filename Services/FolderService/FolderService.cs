@@ -92,7 +92,7 @@ namespace DAM_Upload.Services.FolderService
 
         
 
-        public async Task<List<StorageDTO>> GetFolderAndFileAsync(int? folderId)
+        public async Task<List<StorageDTO>> GetFolderAndFileAsync(int? folderId, int userId)
         {
             var folders = await _context.Folders
             .Where(f => folderId == 0 ? f.ParentId == null : f.ParentId == folderId)
@@ -134,7 +134,7 @@ namespace DAM_Upload.Services.FolderService
 
             bool isDuplicate = Directory.Exists(newPath) || await _context.Folders.AnyAsync(f => f.Name == newFolderName && f.ParentId == folder.ParentId);
             if (isDuplicate)
-            {
+            {  
                 throw new Exception($"A folder with the name '{newFolderName}' already exists in this directory.");
             }
 

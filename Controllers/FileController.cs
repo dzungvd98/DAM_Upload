@@ -1,5 +1,6 @@
 ﻿using DAM_Upload.Config;
 using DAM_Upload.Services.FileService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ namespace DAM_Upload.Controllers
             _context = context;
         }
 
-
+        [Authorize]
         [HttpGet("{fileId}/open")]
         public async Task<IActionResult> GetFile(int fileId)
         {
@@ -44,6 +45,7 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [Authorize]
         private string GetContentType(string path)
         {
             var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
