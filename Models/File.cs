@@ -10,7 +10,12 @@
 
         public string? Path { get; set; }
 
+        public int OwnerId { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public ICollection<PermissionFile> FilePermissions { get; set; } = new List<PermissionFile>();
+
     }
 }

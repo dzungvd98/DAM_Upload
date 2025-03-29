@@ -1,7 +1,10 @@
-﻿using DAM_Upload.Services.FileService;
+﻿using DAM_Upload.Services;
+using DAM_Upload.Services.AuthService;
+using DAM_Upload.Services.FileService;
 using DAM_Upload.Services.FolderService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DAM_Upload.Controllers
 {
@@ -11,11 +14,13 @@ namespace DAM_Upload.Controllers
     {
         public readonly IFolderService folderService;
         public readonly IFileService fileService;
+        private readonly IAuthService _authService;
 
-        public FolderController(IFolderService folderService, IFileService fileService)
+        public FolderController(IFolderService folderService, IFileService fileService, IAuthService authService)
         {
             this.folderService = folderService;
             this.fileService = fileService;
+            _authService = authService;
         }
 
 
@@ -24,6 +29,7 @@ namespace DAM_Upload.Controllers
         {
             try
             {
+
                 var result = await folderService.GetFolderAndFileAsync(folderId);
                 return Ok(result);
             }
@@ -38,7 +44,12 @@ namespace DAM_Upload.Controllers
         {
             try
             {
-                var folderCreated = await folderService.CreateFolder(folderName, parentId);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user.");
+                }
+                var folderCreated = await folderService.CreateFolder(folderName, parentId, userId);
                 return Ok(folderCreated);
             }
             catch (Exception ex)
@@ -52,7 +63,12 @@ namespace DAM_Upload.Controllers
         {
             try
             {
-                var fileUploadted = await fileService.UploadFileAsync(folderId, file);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user.");
+                }
+                var fileUploadted = await fileService.UploadFileAsync(folderId, file, userId);
                 return Ok(fileUploadted);
             }
             catch (Exception ex)

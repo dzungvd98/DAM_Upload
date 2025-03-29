@@ -1,12 +1,12 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using DAM_Upload.Models;
 using Microsoft.EntityFrameworkCore;
+using DAM_Upload.Services.AuthService;
 
 namespace DAM_Upload.Services
 {
-    public class Authservice
+    public class Authservice : IAuthService
     {
         private readonly DamUploadDbContext _context;
 

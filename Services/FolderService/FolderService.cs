@@ -24,59 +24,70 @@ namespace DAM_Upload.Services.FolderService
 
         }
 
-        public async Task<FolderDTO> CreateFolder(string folderName, int? parentId)
+        public async Task<FolderDTO> CreateFolder(string folderName, int? parentId, int userId)
         {
-            var parent = parentId.HasValue ? await _context.Folders.FindAsync(parentId) : null;
-            if(parent == null && parentId != 0)
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                throw new Exception("Folder not found!");
+                try
+                {
+                    var parent = parentId.HasValue ? await _context.Folders.FindAsync(parentId) : null;
+                    if (parent == null && parentId != 0)
+                    {
+                        throw new Exception("Folder not found!");
+                    }
+
+                    string storageDisk = "Disk";
+                    string path = parent != null ? Path.Combine(parent.Path, folderName) : Path.Combine(storageDisk, folderName);
+                    string originalFolderName = folderName;
+                    string basePath = parent != null ? parent.Path : storageDisk;
+
+                    int count = 1;
+                    while (Directory.Exists(path) || await _context.Folders.AnyAsync(f => f.Name == folderName && f.ParentId == parentId))
+                    {
+                        folderName = $"{originalFolderName}{count}";
+                        path = Path.Combine(basePath, folderName);
+                        count++;
+                    }
+
+                    Directory.CreateDirectory(path);
+                    int? validParentId = parent?.FolderId;
+
+                    bool isDuplicate = await _context.Folders
+                        .AnyAsync(f => f.Name == folderName && f.ParentId == parentId);
+
+                    if (isDuplicate)
+                    {
+                        throw new Exception($"A folder with the name '{folderName}' already exists in this directory.");
+                    }
+
+                    var folder = new Folder
+                    {
+                        Name = folderName,
+                        Path = path,
+                        ParentId = validParentId,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        OwnerId = userId
+                    };
+
+                    _context.Folders.Add(folder);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync(); // ✅ Commit nếu không có lỗi
+
+                    return new FolderDTO
+                    {
+                        ParentId = validParentId,
+                        Path = path,
+                        Name = folderName
+                    };
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync(); // ❌ Rollback nếu có lỗi
+                    throw;
+                }
             }
-
-
-
-            string storageDisk = "Disk";
-            string path = parent != null ? Path.Combine(parent.Path, folderName) : Path.Combine(storageDisk, folderName);
-            string originalFolderName = folderName;
-            string basePath = parent != null ? parent.Path : storageDisk;
-
-            
-            int count = 1;
-            while (Directory.Exists(path) || await _context.Folders.AnyAsync(f => f.Name == folderName && f.ParentId == parentId))
-            {
-                folderName = $"{originalFolderName}{count}";
-                path = Path.Combine(basePath, folderName);
-                count++;
-            }
-
-            Directory.CreateDirectory(path);
-            int? validParentId = parent?.FolderId;
-
-            bool isDuplicate = await _context.Folders
-                .AnyAsync(f => f.Name == folderName && f.ParentId == parentId);
-
-            if (isDuplicate)
-            {
-                throw new Exception($"A folder with the name '{folderName}' already exists in this directory.");
-            }
-
-            var folder = new Folder
-            {
-                Name = folderName,
-                Path = path,
-                ParentId = validParentId,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-            };
-
-            _context.Folders.Add(folder);
-            await _context.SaveChangesAsync();
-            var result = new FolderDTO
-            {
-                ParentId = validParentId,
-                Path = path,
-                Name = folderName
-            };
-            return result;
         }
 
         
@@ -84,7 +95,7 @@ namespace DAM_Upload.Services.FolderService
         public async Task<List<StorageDTO>> GetFolderAndFileAsync(int? folderId)
         {
             var folders = await _context.Folders
-            .Where(f => folderId == 0 ? f.ParentId == null : f.FolderId == folderId)
+            .Where(f => folderId == 0 ? f.ParentId == null : f.ParentId == folderId)
             .Select(f => new StorageDTO
             {
                 Id = f.FolderId,

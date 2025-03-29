@@ -4,6 +4,7 @@ using DAM_Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAM_Upload.Migrations
 {
     [DbContext(typeof(DamUploadDbContext))]
-    partial class DamUploadDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250329043034_newm")]
+    partial class newm
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,29 +75,6 @@ namespace DAM_Upload.Migrations
                     b.HasIndex("RequesterId");
 
                     b.ToTable("AccessRequests");
-                });
-
-            modelBuilder.Entity("DAM_Upload.Models.BlacklistedToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("BlacklistedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BlacklistedTokens");
                 });
 
             modelBuilder.Entity("DAM_Upload.Models.File", b =>

@@ -1,4 +1,4 @@
-﻿namespace DAM_Upload.Dtos
+﻿namespace DAM_Upload.DTO
 {
     public class RegisterDto
     {

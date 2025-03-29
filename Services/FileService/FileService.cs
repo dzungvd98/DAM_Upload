@@ -16,7 +16,7 @@ namespace DAM_Upload.Services.FileService
             _context = context;
         }
 
-        public async Task<StorageDTO> UploadFileAsync(int? folderId, IFormFile file)
+        public async Task<StorageDTO> UploadFileAsync(int? folderId, IFormFile file, int userId)
         {
             ArgumentNullException.ThrowIfNull(file, "File invalid!");
 
@@ -63,7 +63,8 @@ namespace DAM_Upload.Services.FileService
                 UpdatedAt = DateTime.Now,
                 Folder = folder,
                 Size = (int)file.Length,
-                Path = filePath
+                Path = filePath,
+                OwnerId = userId
             };
 
             _context.Files.Add(newFile);
