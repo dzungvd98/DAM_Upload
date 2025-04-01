@@ -15,6 +15,8 @@ namespace DAM_Upload.Services.FolderService
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
+        private const int DefaultPageSize = 5;
+
         public FolderService(DamUploadDbContext dbContext, IConfiguration configuration, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _context = dbContext;
@@ -92,10 +94,23 @@ namespace DAM_Upload.Services.FolderService
 
         
 
-        public async Task<List<StorageDTO>> GetFolderAndFileAsync(int? folderId, int userId)
+        public async Task<(List<StorageDTO> Items, bool HasMore)> GetFolderAndFileAsync(int? folderId, int userId, int skip, int take = DefaultPageSize)
         {
-            var folders = await _context.Folders
-            .Where(f => folderId == 0 ? f.ParentId == null : f.ParentId == folderId)
+            
+            skip = Math.Max(0, skip);
+            take = Math.Max(1, take);
+
+            // Lấy danh sách Folders
+            IQueryable<Folder> folderQuery = _context.Folders
+                .Where(f => f.OwnerId == userId); // Lọc theo UserId
+
+            if (folderId.HasValue)
+            {
+                folderQuery = folderQuery.Where(f => f.ParentId == folderId.Value);
+            }
+
+
+            var folders = await folderQuery
             .Select(f => new StorageDTO
             {
                 Id = f.FolderId,
@@ -107,8 +122,16 @@ namespace DAM_Upload.Services.FolderService
 
             string hostlink = _configuration["Path:Link"];
 
+            // Lấy danh sách Files
+            IQueryable<DAM_Upload.Models.File> fileQuery = _context.Files
+                .Where(f => f.Folder != null && f.Folder.OwnerId == userId); // Lọc theo UserId của Folder
+
+            if (folderId.HasValue)
+            {
+                fileQuery = fileQuery.Where(f => f.Folder != null && f.Folder.FolderId == folderId.Value);
+            }
+
             var files = await _context.Files
-                .Where(f => folderId == 0 ? f.Folder == null : f.Folder.FolderId == folderId)
                 .Select(f => new StorageDTO
                 {
                     Id = f.FileId,
@@ -118,8 +141,18 @@ namespace DAM_Upload.Services.FolderService
                     IconLink = $"{hostlink}/api/icon/{f.Format}"
                 })
                 .ToListAsync();
+            var combinedList = folders.Concat(files)
+                .ToList();
 
-            return folders.Concat(files).ToList();
+            int totalCount = combinedList.Count;
+            bool hasMore = skip + take < totalCount;
+
+            var items = combinedList
+               .Skip(skip)
+               .Take(take)
+               .ToList();
+
+            return (items, hasMore);
         }
 
 

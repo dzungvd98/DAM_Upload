@@ -1,4 +1,5 @@
-﻿using DAM_Upload.Services;
+﻿using DAM_Upload.DTO;
+using DAM_Upload.Services;
 using DAM_Upload.Services.AuthService;
 using DAM_Upload.Services.FileService;
 using DAM_Upload.Services.FolderService;
@@ -13,30 +14,27 @@ namespace DAM_Upload.Controllers
     [ApiController]
     public class FolderController : ControllerBase
     {
-        public readonly IFolderService folderService;
-        public readonly IFileService fileService;
+        private readonly IFolderService folderService;
+        private readonly IFileService fileService;
         private readonly IAuthService _authService;
+        private readonly SearchService searchService;
 
-        public FolderController(IFolderService folderService, IFileService fileService, IAuthService authService)
+
+        public FolderController(IFolderService folderService, IFileService fileService, IAuthService authService, SearchService searchService)
         {
             this.folderService = folderService;
             this.fileService = fileService;
             _authService = authService;
+            this.searchService = searchService;
         }
 
-        [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetFolderAndFile(int folderId)
+        public async Task<IActionResult> GetFolderAndFile(int folderId, int skip = 0)
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized("Invalid user.");
-                }
-                var result = await folderService.GetFolderAndFileAsync(folderId, userId);
-                return Ok(result);
+                var result = await folderService.GetFolderAndFileAsync(folderId, 1, skip);
+                return Ok(new { Items = result.Items, HasMore = result.HasMore });
             }
             catch (Exception ex)
             {
@@ -92,6 +90,34 @@ namespace DAM_Upload.Controllers
             {
                 var folderUpdated = await folderService.UpdateFolderNameAsync(folderId, folderName);
                 return Ok(folderUpdated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("search")]
+        public async Task<IActionResult> Search([FromBody] SearchCriteriaDTO criteria = null, int skip = 0)
+        {
+            try
+            {
+                //var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                //if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                //{
+                //    return Unauthorized("Invalid user.");
+                //}
+
+                criteria ??= new SearchCriteriaDTO();
+
+                var (items, hasMore) = await searchService.SearchAsync(1, criteria, skip);
+                return Ok(new
+                {
+                    Items = items,
+                    HasMore = hasMore,
+                    Skip = skip,
+                    Take = 5
+                });
             }
             catch (Exception ex)
             {

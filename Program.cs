@@ -34,6 +34,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IProducerService, ProducerService>();
 builder.Services.AddScoped<IAccessRequestService, AccessRequestService>();
+builder.Services.AddScoped<SearchService>();
 builder.Services.AddHostedService<ConsumerService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddSession(options =>
