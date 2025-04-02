@@ -28,13 +28,19 @@ namespace DAM_Upload.Controllers
             this.searchService = searchService;
         }
 
+        [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetFolderAndFile(int folderId, int skip = 0)
+        public async Task<IActionResult> GetFolderAndFile(int? folderId, int skip = 0)
         {
             try
             {
-                var result = await folderService.GetFolderAndFileAsync(folderId, 1, skip);
-                return Ok(new { Items = result.Items, HasMore = result.HasMore });
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user.");
+                }
+                var result = await folderService.GetFolderAndFileAsync(folderId, userId, skip);
+                return Ok(result.Items);
             }
             catch (Exception ex)
             {
@@ -97,20 +103,21 @@ namespace DAM_Upload.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("search")]
         public async Task<IActionResult> Search([FromBody] SearchCriteriaDTO criteria = null, int skip = 0)
         {
             try
             {
-                //var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                //if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                //{
-                //    return Unauthorized("Invalid user.");
-                //}
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized("Invalid user.");
+                }
 
                 criteria ??= new SearchCriteriaDTO();
 
-                var (items, hasMore) = await searchService.SearchAsync(1, criteria, skip);
+                var (items, hasMore) = await searchService.SearchAsync(userId, criteria, skip);
                 return Ok(new
                 {
                     Items = items,

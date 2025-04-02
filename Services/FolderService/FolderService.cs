@@ -6,6 +6,7 @@ using DAM_Upload.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
+using Confluent.Kafka;
 namespace DAM_Upload.Services.FolderService
 {
     public class FolderService : IFolderService
@@ -15,7 +16,7 @@ namespace DAM_Upload.Services.FolderService
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        private const int DefaultPageSize = 5;
+        private const int DefaultPageSize = 10;
 
         public FolderService(DamUploadDbContext dbContext, IConfiguration configuration, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
@@ -107,6 +108,9 @@ namespace DAM_Upload.Services.FolderService
             if (folderId.HasValue)
             {
                 folderQuery = folderQuery.Where(f => f.ParentId == folderId.Value);
+            } else
+            {
+                folderQuery = folderQuery.Where(f => f.ParentId == null);
             }
 
 
@@ -124,14 +128,11 @@ namespace DAM_Upload.Services.FolderService
 
             // Lấy danh sách Files
             IQueryable<DAM_Upload.Models.File> fileQuery = _context.Files
-                .Where(f => f.Folder != null && f.Folder.OwnerId == userId); // Lọc theo UserId của Folder
+                .Where(f => f.OwnerId == userId); // Lọc theo UserId của Folder
 
-            if (folderId.HasValue)
-            {
-                fileQuery = fileQuery.Where(f => f.Folder != null && f.Folder.FolderId == folderId.Value);
-            }
+            fileQuery = fileQuery.Where(f => folderId.HasValue ? f.Folder.FolderId == folderId.Value : f.FolderId == null);
 
-            var files = await _context.Files
+            var files = await fileQuery
                 .Select(f => new StorageDTO
                 {
                     Id = f.FileId,
